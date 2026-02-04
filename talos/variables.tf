@@ -114,6 +114,11 @@ variable "worker_settings" {
   default = []
 }
 
+variable "talos_image_id" {
+  description = "Talos image schematic id (from https://factory.talos.dev/)"
+  type        = string
+}
+
 variable "talos_version" {
   description = "Talos version to install (iso installation only)"
   type        = string

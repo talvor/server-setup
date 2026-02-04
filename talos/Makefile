@@ -29,8 +29,10 @@ destroy:
 
 .PHONY: read-kubeconfig
 read-kubeconfig:
+	@mkdir -p ~/.kube
 	@tofu -chdir=./ output -raw kubeconfig > ~/.kube/config
 
 .PHONY: read-talosconfig
 read-talosconfig:
-	@tofu -chdir=./ output -raw talosconfig > ./talos/talosconfig
+	@mkdir -p ~/.talos
+	@tofu -chdir=./ output -raw talosconfig > ~/.talos/config

@@ -1,7 +1,8 @@
 locals {
-  size_1GB         = 1024 * 1024 * 1024
-  cluster_endpoint = var.cluster_endpoint != null ? var.cluster_endpoint : "https://${var.cluster_vip}:6443"
-  cluster_ip       = var.cp_settings[0].ip_address
+  size_1GB            = 1024 * 1024 * 1024
+  cluster_endpoint    = var.cluster_endpoint != null ? var.cluster_endpoint : "https://${var.cluster_vip}:6443"
+  cluster_ip          = var.cp_settings[0].ip_address
+  talos_install_image = "factory.talos.dev/nocloud-installer/${var.talos_image_id}:${var.talos_version}"
 }
 
 data "xenorchestra_pool" "this" {
@@ -139,7 +140,7 @@ resource "talos_machine_configuration_apply" "controlplane" {
       machine = {
         install = {
           disk  = "/dev/xvda"
-          image = "factory.talos.dev/nocloud-installer/613e1592b2da41ae5e265e8789429f22e121aab91cb4deb6bc3c0b6262961245:${var.talos_version}"
+          image = local.talos_install_image
         }
         network = {
           interfaces = [
@@ -174,7 +175,7 @@ resource "talos_machine_configuration_apply" "worker" {
       machine = {
         install = {
           disk  = "/dev/xvda"
-          image = "factory.talos.dev/nocloud-installer/613e1592b2da41ae5e265e8789429f22e121aab91cb4deb6bc3c0b6262961245:${var.talos_version}"
+          image = local.talos_install_image
         }
         network = {
           interfaces = [
