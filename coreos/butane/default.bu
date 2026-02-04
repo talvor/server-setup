@@ -1,0 +1,54 @@
+variant: fcos
+version: 1.6.0
+systemd:
+  units:
+    - name: rpm-ostree-install-xen-guest-utils.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Layer Xen Guest Tools with rpm-ostree
+        Wants=network-online.target
+        After=network-online.target
+        Before=zincati.service
+        ConditionPathExists=!/var/lib/%N.stamp
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/bin/rpm-ostree install -y --allow-inactive xe-guest-utilities-latest
+        ExecStart=/bin/touch /var/lib/%N.stamp
+        ExecStart=/bin/systemctl --no-block reboot
+
+        [Install]
+        WantedBy=multi-user.target
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys:
+        - ${ssh_key}
+storage:
+  files:
+    - path: /etc/hostname
+      mode: 0644
+      overwrite: true
+      contents:
+        inline: ${hostname} 
+    - path: /etc/NetworkManager/system-connections/enX0.nmconnection
+      mode: 0600
+      contents:
+        inline: |
+          [connection]
+          id=enX0
+          type=ethernet
+          interface-name=enX0
+          [ipv4]
+          address1=${ip_address}/24,${gateway}
+          dhcp-hostname=${hostname}
+          dns=${dns_server};
+          dns-search=
+          may-fail=false
+          method=manual
+  links:
+    - path: /etc/systemd/system/multi-user.target.wants/xe-linux-distribution.service
+      target: /usr/lib/systemd/system/xe-linux-distribution.service
+      hard: false
