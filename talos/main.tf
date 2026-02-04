@@ -193,6 +193,16 @@ resource "talos_machine_configuration_apply" "worker" {
             }
           ]
         }
+        disks = [
+          {
+            device = "/dev/xvdb"
+            partitions = [
+              {
+                mountpoint = "/var/mnt/data"
+              }
+            ]
+          }
+        ]
       }
     })
   ]
