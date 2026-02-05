@@ -1,0 +1,113 @@
+variant: fcos
+version: 1.6.0
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys:
+        - ${ssh_key}
+storage:
+  directories:
+    - overwrite: true
+      path: /opt/pihole/etc
+    - overwrite: true
+      path: /opt/pihole/dnsmasq.d
+  files:
+    - path: /etc/hostname
+      mode: 0644
+      overwrite: true
+      contents:
+        inline: ${hostname} 
+    - path: /etc/NetworkManager/system-connections/enX0.nmconnection
+      mode: 0600
+      contents:
+        inline: |
+          [connection]
+          id=enX0
+          type=ethernet
+          interface-name=enX0
+          [ipv4]
+          address1=${ip_address}/24,${gateway}
+          dhcp-hostname=${hostname}
+          dns=${dns_server};
+          dns-search=
+          may-fail=false
+          method=manual
+    - path: /etc/NetworkManager/conf.d/dns.conf
+      contents:
+        inline: |
+          [main]
+          dns=none
+      group:
+        id: 0
+      mode: 420
+      user:
+        id: 0
+    - path: /etc/resolv.conf
+      contents:
+        inline: |
+          nameserver 1.1.1.1
+      group:
+        id: 0
+      mode: 420
+      overwrite: true
+      user:
+        id: 0
+    - path: /opt/pihole/etc/environment
+      contents:
+        inline: |
+          TZ=Australia/Sydney
+          WEBPASSWORD=${pihole_password}
+      mode: 420
+systemd:
+  units:
+    - name: rpm-ostree-install-xen-guest-utils.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Layer Xen Guest Tools with rpm-ostree
+        Wants=network-online.target
+        After=network-online.target
+        Before=zincati.service
+        ConditionPathExists=!/var/lib/%N.stamp
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/bin/rpm-ostree install -y --allow-inactive xe-guest-utilities-latest
+        ExecStart=/bin/touch /var/lib/%N.stamp
+        ExecStart=/bin/systemctl --no-block reboot
+
+        [Install]
+        WantedBy=multi-user.target
+    - name: coreos-migrate-to-systemd-resolved.service
+      enabled: false
+      mask: true
+    - name: systemd-resolved.service
+      enabled: false
+      mask: true
+    - name: pihole.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Pi-hole
+        After=network-online.target
+        Wants=network-online.target
+
+        [Service]
+        TimeoutStartSec=0
+        ExecStop=/bin/podman stop pihole
+        ExecStartPre=mkdir -p /opt/pihole
+        ExecStartPre=-/bin/podman kill pihole
+        ExecStartPre=-/bin/podman rm pihole
+        ExecStartPre=-/bin/podman pull docker.io/pihole/pihole:latest
+        ExecStart=/bin/podman run \
+            --net=host \
+            --name pihole \
+            --volume /opt/pihole/etc/:/etc/pihole/:z \
+            --volume /opt/pihole/dnsmasq.d/:/etc/dnsmasq.d/:z \
+            --env-file /opt/pihole/etc/environment \
+            --cap-add=NET_ADMIN \
+            docker.io/pihole/pihole:latest
+
+        [Install]
+        WantedBy=multi-user.target

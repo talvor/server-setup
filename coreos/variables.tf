@@ -57,13 +57,15 @@ variable "dns_server" {
 variable "vm_settings" {
   description = "VM settings"
   type = list(object({
-    name        = string
-    description = string
-    cpus        = number
-    memory_gb   = number
-    disk_gb     = number
-    target_node = string
-    ip_address  = string
+    name             = string
+    description      = string
+    cpus             = number
+    memory_gb        = number
+    disk_gb          = number
+    target_node      = string
+    ip_address       = string
+    config_template  = optional(string, "butane/default.bu")
+    config_variables = optional(map(any), {})
   }))
   default = []
 }

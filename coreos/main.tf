@@ -22,13 +22,18 @@ data "xenorchestra_hosts" "hosts" {
 
 data "butane_config" "config" {
   for_each = { for vm in var.vm_settings : vm.name => vm }
-  content = templatefile("./butane/default.bu", {
-    ssh_key    = var.ssh_key
-    hostname   = each.value.name
-    ip_address = each.value.ip_address
-    gateway    = var.gateway_address
-    dns_server = var.dns_server
-  })
+  content = templatefile(
+    each.value.config_template,
+    merge(
+      {
+        ssh_key    = var.ssh_key
+        hostname   = each.value.name
+        ip_address = each.value.ip_address
+        gateway    = var.gateway_address
+        dns_server = var.dns_server
+      },
+    each.value.config_variables)
+  )
   pretty = true
 }
 

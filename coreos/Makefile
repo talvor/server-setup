@@ -7,7 +7,7 @@ plan:
 	@tofu -chdir=./ plan
 
 .PHONY: apply
-apply: convert-butane
+apply:
 	@tofu -chdir=./ apply
 
 .PHONY: destroy
